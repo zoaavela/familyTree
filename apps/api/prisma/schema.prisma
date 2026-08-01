@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TreeType {
+  PERSONAL
+  REFERENCE
+}
+
+enum TreeCategory {
+  ROYAL
+  RELIGIOUS
+  HISTORICAL
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+  UNLISTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNKNOWN
+}
+
+enum RelationshipType {
+  PARENT_OF
+  SPOUSE_OF
+}
+
+enum CollaboratorRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum MediaType {
+  PHOTO
+  DOCUMENT
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?   @map("password_hash")
+  displayName   String    @map("display_name")
+  avatarUrl     String?   @map("avatar_url")
+  bio           String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  trees         Tree[]
+  collaborations TreeCollaborator[]
+  followers     Follow[] @relation("followers")
+  following     Follow[] @relation("following")
+
+  @@map("users")
+}
+
+model Tree {
+  id          String       @id @default(uuid())
+  ownerId     String?      @map("owner_id")
+  owner       User?        @relation(fields: [ownerId], references: [id])
+  type        TreeType
+  category    TreeCategory?
+  title       String
+  description String?
+  visibility  Visibility   @default(PRIVATE)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  persons       Person[]
+  relationships Relationship[]
+  media         Media[]
+  collaborators TreeCollaborator[]
+
+  @@map("trees")
+}
+
+model Person {
+  id          String    @id @default(uuid())
+  treeId      String    @map("tree_id")
+  tree        Tree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  firstName   String    @map("first_name")
+  lastName    String?   @map("last_name")
+  gender      Gender    @default(UNKNOWN)
+  birthDate   DateTime? @map("birth_date")
+  deathDate   DateTime? @map("death_date")
+  birthPlace  String?   @map("birth_place")
+  deathPlace  String?   @map("death_place")
+  photoUrl    String?   @map("photo_url")
+  biography   String?
+  metadata    Json?
+  createdBy   String?   @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  media          Media[]
+  relationshipsA Relationship[] @relation("personA")
+  relationshipsB Relationship[] @relation("personB")
+
+  @@index([treeId])
+  @@map("persons")
+}
+
+model Relationship {
+  id        String            @id @default(uuid())
+  treeId    String            @map("tree_id")
+  tree      Tree              @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  personAId String            @map("person_a_id")
+  personA   Person            @relation("personA", fields: [personAId], references: [id], onDelete: Cascade)
+  personBId String            @map("person_b_id")
+  personB   Person            @relation("personB", fields: [personBId], references: [id], onDelete: Cascade)
+  type      RelationshipType
+  startDate DateTime?         @map("start_date")
+  endDate   DateTime?         @map("end_date")
+
+  @@index([personAId])
+  @@index([personBId])
+  @@map("relationships")
+}
+
+model Media {
+  id         String    @id @default(uuid())
+  treeId     String    @map("tree_id")
+  tree       Tree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  personId   String?   @map("person_id")
+  person     Person?   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  url        String
+  type       MediaType
+  caption    String?
+  uploadedBy String?   @map("uploaded_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("media")
+}
+
+model TreeCollaborator {
+  id         String            @id @default(uuid())
+  treeId     String            @map("tree_id")
+  tree       Tree              @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  userId     String            @map("user_id")
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       CollaboratorRole  @default(VIEWER)
+  invitedAt  DateTime          @default(now()) @map("invited_at")
+  acceptedAt DateTime?         @map("accepted_at")
+
+  @@unique([treeId, userId])
+  @@map("tree_collaborators")
+}
+
+model Follow {
+  id         String   @id @default(uuid())
+  followerId String   @map("follower_id")
+  follower   User     @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  followedId String   @map("followed_id")
+  followed   User     @relation("followers", fields: [followedId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([followerId, followedId])
+  @@map("follows")
+}
