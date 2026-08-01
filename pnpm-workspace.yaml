@@ -3,5 +3,5 @@ packages:
   - "packages/*"
 allowBuilds:
   '@prisma/engines': set this to true or false
-  prisma: set this to true or false
+  prisma: true
   unrs-resolver: false
