@@ -1,5 +1,29 @@
 const API_URL = 'http://localhost:3000';
 
+export interface Tree {
+    id: string;
+    title: string;
+    type: 'PERSONAL' | 'REFERENCE';
+    visibility: string;
+    createdAt: string;
+}
+
+export interface Person {
+    id: string;
+    treeId: string;
+    firstName: string;
+    lastName: string | null;
+    birthDate: string | null;
+    deathDate: string | null;
+}
+
+export interface Relationship {
+    id: string;
+    personAId: string;
+    personBId: string;
+    type: 'PARENT_OF' | 'SPOUSE_OF';
+}
+
 interface ApiError {
     message: string | string[];
     error: string;
@@ -41,4 +65,21 @@ export const api = {
             body: JSON.stringify({ email, password }),
         }),
     me: (token: string) => request<{ id: string; email: string; displayName: string }>('/auth/me', {}, token),
+    createTree: (token: string, title: string, type: 'PERSONAL' | 'REFERENCE') =>
+        request<Tree>('/trees', { method: 'POST', body: JSON.stringify({ title, type }) }, token),
+    listTrees: (token: string) => request<Tree[]>('/trees', {}, token),
+    getTree: (token: string, treeId: string) => request<Tree>(`/trees/${treeId}`, {}, token),
+
+    createPerson: (token: string, treeId: string, data: { firstName: string; lastName?: string }) =>
+        request<Person>(`/trees/${treeId}/persons`, { method: 'POST', body: JSON.stringify(data) }, token),
+    listPersons: (token: string, treeId: string) =>
+        request<Person[]>(`/trees/${treeId}/persons`, {}, token),
+
+    createRelationship: (
+        token: string,
+        treeId: string,
+        data: { personAId: string; personBId: string; type: 'PARENT_OF' | 'SPOUSE_OF' },
+    ) => request<Relationship>(`/trees/${treeId}/relationships`, { method: 'POST', body: JSON.stringify(data) }, token),
+    listRelationships: (token: string, treeId: string) =>
+        request<Relationship[]>(`/trees/${treeId}/relationships`, {}, token),
 };

@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './lib/AuthContext';
 import { Register } from './pages/Register';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { TreesList } from './pages/TreesList';
+import { TreeDetail } from './pages/TreeDetail';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -19,6 +21,22 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/trees"
+        element={
+          <PrivateRoute>
+            <TreesList />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/trees/:treeId"
+        element={
+          <PrivateRoute>
+            <TreeDetail />
           </PrivateRoute>
         }
       />
