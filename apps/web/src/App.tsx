@@ -1,14 +1,38 @@
-import { Button, Input, Card, Label } from '@familytree/ui';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './lib/AuthContext';
+import { Register } from './pages/Register';
+import { Login } from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
+    </Routes>
+  );
+}
 
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Card className="w-80">
-        <Label htmlFor="test">Nom</Label>
-        <Input id="test" placeholder="Ton nom" className="mb-4" />
-        <Button>Valider</Button>
-      </Card>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
