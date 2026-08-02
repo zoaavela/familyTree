@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { TreesList } from './pages/TreesList';
 import { TreeDetail } from './pages/TreeDetail';
+import { TreeGraph } from './pages/TreeGraph';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -37,6 +38,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <TreeDetail />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/trees/:treeId/graph"
+        element={
+          <PrivateRoute>
+            <TreeGraph />
           </PrivateRoute>
         }
       />
