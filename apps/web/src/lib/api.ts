@@ -15,6 +15,9 @@ export interface Person {
     lastName: string | null;
     birthDate: string | null;
     deathDate: string | null;
+    birthPlace: string | null;
+    deathPlace: string | null;
+    biography: string | null;
 }
 
 export interface Relationship {
@@ -82,4 +85,26 @@ export const api = {
     ) => request<Relationship>(`/trees/${treeId}/relationships`, { method: 'POST', body: JSON.stringify(data) }, token),
     listRelationships: (token: string, treeId: string) =>
         request<Relationship[]>(`/trees/${treeId}/relationships`, {}, token),
+
+    deleteRelationship: (token: string, treeId: string, relId: string) =>
+        request<{ success: boolean }>(`/trees/${treeId}/relationships/${relId}`, { method: 'DELETE' }, token),
+
+    updatePerson: (
+        token: string,
+        treeId: string,
+        personId: string,
+        data: Partial<{
+            firstName: string;
+            lastName: string;
+            birthDate: string;
+            deathDate: string;
+            birthPlace: string;
+            deathPlace: string;
+            biography: string;
+        }>,
+    ) => request<Person>(`/trees/${treeId}/persons/${personId}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
+
+    deletePerson: (token: string, treeId: string, personId: string) =>
+        request<{ success: boolean }>(`/trees/${treeId}/persons/${personId}`, { method: 'DELETE' }, token),
 };
+
