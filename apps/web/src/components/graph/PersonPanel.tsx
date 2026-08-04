@@ -129,8 +129,8 @@ export function PersonPanel({
     return (
         <aside
             onPointerDown={(e) => e.stopPropagation()}
-            className="absolute right-0 top-0 z-20 flex h-full w-[320px] flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5"
-            style={{ animation: 'slideInRight 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+            className="absolute inset-x-0 bottom-0 top-1/4 z-20 flex flex-col overflow-y-auto rounded-t-[var(--radius-lg)] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5 sm:inset-y-0 sm:left-auto sm:right-0 sm:top-0 sm:w-[320px] sm:rounded-none sm:border-l sm:border-t-0"
+            style={{ animation: 'slideInPanel 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
             <div className="mb-4 flex justify-center">
                 <PhotoUpload

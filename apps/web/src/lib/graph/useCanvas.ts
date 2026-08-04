@@ -14,6 +14,7 @@ export function useCanvas() {
     const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, scale: 1 });
     const [isPanning, setIsPanning] = useState(false);
     const panStart = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
+    const pinchStart = useRef<{ dist: number; scale: number } | null>(null);
 
     const zoomAt = useCallback((clientX: number, clientY: number, factor: number) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -45,6 +46,58 @@ export function useCanvas() {
         el.addEventListener('wheel', onWheel, { passive: false });
         return () => el.removeEventListener('wheel', onWheel);
     }, [zoomAt]);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        function dist(t: TouchList) {
+            return Math.hypot(t[1].clientX - t[0].clientX, t[1].clientY - t[0].clientY);
+        }
+        function mid(t: TouchList) {
+            return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 };
+        }
+
+        function onTouchStart(e: TouchEvent) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                setViewport((v) => {
+                    pinchStart.current = { dist: dist(e.touches), scale: v.scale };
+                    return v;
+                });
+            }
+        }
+
+        function onTouchMove(e: TouchEvent) {
+            if (e.touches.length === 2 && pinchStart.current) {
+                e.preventDefault();
+                const factor = dist(e.touches) / pinchStart.current.dist;
+                const rect = el.getBoundingClientRect();
+                const m = mid(e.touches);
+                const px = m.x - rect.left;
+                const py = m.y - rect.top;
+
+                setViewport((v) => {
+                    const next = Math.min(2.5, Math.max(0.15, pinchStart.current!.scale * factor));
+                    const ratio = next / v.scale;
+                    return { scale: next, x: px - (px - v.x) * ratio, y: py - (py - v.y) * ratio };
+                });
+            }
+        }
+
+        function onTouchEnd(e: TouchEvent) {
+            if (e.touches.length < 2) pinchStart.current = null;
+        }
+
+        el.addEventListener('touchstart', onTouchStart, { passive: false });
+        el.addEventListener('touchmove', onTouchMove, { passive: false });
+        el.addEventListener('touchend', onTouchEnd);
+        return () => {
+            el.removeEventListener('touchstart', onTouchStart);
+            el.removeEventListener('touchmove', onTouchMove);
+            el.removeEventListener('touchend', onTouchEnd);
+        };
+    }, []);
 
     const onPointerDown = useCallback(
         (e: React.PointerEvent) => {

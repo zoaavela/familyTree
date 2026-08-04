@@ -312,51 +312,54 @@ export function TreeGraph() {
 
     return (
         <div className="relative flex h-screen w-screen flex-col overflow-hidden">
-            <header className="z-10 flex items-center gap-4 border-b border-[var(--color-border)] px-4 py-2.5">
-                <Link to="/trees" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]">
-                    ← Mes arbres
+            <header className="z-10 flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 sm:gap-4 sm:px-4 sm:py-2.5">
+                <Link
+                    to="/"
+                    className="shrink-0 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                >
+                    ←
                 </Link>
-                <Link to={`/trees/${treeId}`} className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]">
+                <Link
+                    to={`/trees/${treeId}`}
+                    className="hidden shrink-0 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] sm:inline"
+                >
                     Vue liste
                 </Link>
+
                 {mode === 'radial' && (
-                    <span className="rounded-full bg-[var(--color-bg)] px-2.5 py-1 text-[11px] text-[var(--color-ink-muted)]">
+                    <span className="hidden shrink-0 rounded-full bg-[var(--color-bg)] px-2.5 py-1 text-[11px] text-[var(--color-ink-muted)] sm:inline">
                         Orbite · {persons.find((p) => p.id === focusId)?.firstName}
                     </span>
                 )}
+
                 {persons.length > 0 && (
-                    <div className="ml-2">
+                    <div className="ml-1 min-w-0 flex-1 sm:ml-2 sm:flex-none">
                         <SearchBar persons={persons} onPick={focusPerson} />
                     </div>
                 )}
-                <div className="ml-auto flex items-center gap-1.5">
+
+                <div className="ml-auto flex shrink-0 items-center gap-1.5">
                     {mode === 'vertical' && (
-                        <>
-                            <button
-                                onClick={() => {
-                                    const id = selectedId ?? persons[0]?.id;
-                                    if (id) toggleRadial(id);
-                                }}
-                                className={btn}
-                                title={selectedId ? 'Voir l\'orbite de cette personne' : 'Voir l\'orbite (racine)'}
-                            >
-                                Vue orbitale
-                            </button>
-                            <button
-                                onClick={() => setShowSiblings((s) => !s)}
-                                className={btn}
-                                style={{ background: showSiblings ? 'var(--color-bg)' : 'transparent', opacity: showSiblings ? 1 : 0.55 }}
-                            >
-                                Fratries
-                            </button>
-                        </>
+                        <button
+                            onClick={() => setShowSiblings((s) => !s)}
+                            className={`${btn} hidden sm:inline-block`}
+                            style={{ background: showSiblings ? 'var(--color-bg)' : 'transparent', opacity: showSiblings ? 1 : 0.55 }}
+                        >
+                            Fratries
+                        </button>
                     )}
                     {mode === 'radial' && (
-                        <button onClick={exitRadial} className={btn}>
+                        <button onClick={exitRadial} className={`${btn} hidden sm:inline-block`}>
                             Quitter l'orbite
                         </button>
                     )}
-                    <button onClick={() => layout && fitToBounds(layout.bounds)} className={btn}>
+                    <button onClick={() => zoomBy(0.85)} className={`${btn} w-7 px-0`} aria-label="Dézoomer">
+                        −
+                    </button>
+                    <button onClick={() => zoomBy(1.18)} className={`${btn} w-7 px-0`} aria-label="Zoomer">
+                        +
+                    </button>
+                    <button onClick={() => layout && fitToBounds(layout.bounds)} className={`${btn} hidden sm:inline-block`}>
                         Recentrer
                     </button>
                 </div>
@@ -420,7 +423,7 @@ export function TreeGraph() {
                             </g>
                         </svg>
 
-                        <div className="pointer-events-none absolute bottom-4 left-4 flex flex-col gap-2">
+                        <div className="pointer-events-none absolute bottom-4 left-3 hidden flex-col gap-2 sm:flex sm:left-4">
                             <div className="flex gap-3.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-[11px] text-[var(--color-ink-muted)]">
                                 {[
                                     { label: 'Filiation', color: 'var(--edge-parent)', dash: undefined },
@@ -440,22 +443,22 @@ export function TreeGraph() {
                             </p>
                         </div>
 
-                        <button
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => openAddModal(null)}
-                            className="absolute bottom-5 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-105"
-                            style={{
-                                width: 48,
-                                height: 48,
-                                background: 'var(--color-accent)',
-                                color: 'var(--color-bg)',
-                                right: selectedPerson ? 340 : 20,
-                                transitionDuration: 'var(--transition-base)',
-                            }}
-                            aria-label="Ajouter une personne"
-                        >
-                            <span className="text-2xl leading-none">+</span>
-                        </button>
+                        {persons.length > 0 && !selectedPerson && (
+                            <button
+                                onClick={() => openAddModal(null)}
+                                className="absolute bottom-5 right-5 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-105"
+                                style={{
+                                    width: 48,
+                                    height: 48,
+                                    background: 'var(--color-accent)',
+                                    color: 'var(--color-bg)',
+                                    transitionDuration: 'var(--transition-base)',
+                                }}
+                                aria-label="Ajouter une personne"
+                            >
+                                <span className="text-2xl leading-none">+</span>
+                            </button>
+                        )}
                     </>
                 )}
 

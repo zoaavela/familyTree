@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { GraphNode } from '../../lib/graph/types';
+import { useLongPress } from '../../lib/graph/useLongPress';
 
 interface Props {
     node: GraphNode;
@@ -17,9 +18,14 @@ export function PersonOrbitNode({ node, isFocus, selected, dimmed, onSelect, onF
     const initials = `${person.firstName[0] ?? ''}${person.lastName?.[0] ?? ''}`.toUpperCase();
     const r = isFocus ? 34 : Math.max(14, 23 - node.generation * 3);
 
+    const longPress = useLongPress((x, y) => {
+        onContextMenu({ preventDefault() {}, stopPropagation() {}, clientX: x, clientY: y } as React.MouseEvent, person.id);
+    });
+
     return (
         <g
             data-node
+            {...longPress}
             onContextMenu={(e) => onContextMenu(e, person.id)}
             onClick={() => onSelect(person.id)}
             onDoubleClick={(e) => {

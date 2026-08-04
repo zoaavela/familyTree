@@ -1,5 +1,6 @@
 import type { GraphNode } from '../../lib/graph/types';
 import { NODE_WIDTH, NODE_HEIGHT } from '../../lib/graph/types';
+import { useLongPress } from '../../lib/graph/useLongPress';
 
 interface Props {
     node: GraphNode;
@@ -21,6 +22,10 @@ export function PersonCard({ node, selected, dimmed, onSelect, onAddRelative, on
     const round =
         'flex items-center justify-center rounded-full shadow-sm transition-transform hover:scale-110';
 
+    const longPress = useLongPress((x, y) => {
+        onContextMenu({ preventDefault() {}, stopPropagation() {}, clientX: x, clientY: y } as React.MouseEvent, person.id);
+    });
+
     return (
         <foreignObject
             x={-NODE_WIDTH / 2}
@@ -31,6 +36,7 @@ export function PersonCard({ node, selected, dimmed, onSelect, onAddRelative, on
         >
             <div
                 onContextMenu={(e) => onContextMenu(e, person.id)}
+                {...longPress}
                 data-node
                 onClick={() => onSelect(person.id)}
                 className="group relative flex cursor-pointer select-none items-center gap-2.5 rounded-[var(--radius-md)] border bg-[var(--color-bg-elevated)] px-3"
