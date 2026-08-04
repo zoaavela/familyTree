@@ -6,7 +6,6 @@ import { Login } from './pages/Login';
 import { MyTrees } from './pages/MyTrees';
 import { Profile } from './pages/Profile';
 import { Settings } from './pages/Settings';
-import { TreeDetail } from './pages/TreeDetail';
 import { TreeGraph } from './pages/TreeGraph';
 import { AppShell } from './components/AppShell';
 
@@ -42,14 +41,6 @@ function AppRoutes() {
         <Route path="parametres" element={<Settings />} />
       </Route>
 
-      <Route
-        path="/app/trees/:treeId"
-        element={
-          <PrivateRoute>
-            <TreeDetail />
-          </PrivateRoute>
-        }
-      />
       <Route
         path="/app/trees/:treeId/graph"
         element={

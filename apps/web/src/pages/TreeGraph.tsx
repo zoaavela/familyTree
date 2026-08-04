@@ -14,6 +14,7 @@ import { PersonOrbitNode } from '../components/graph/PersonOrbitNode';
 import { PersonPanel } from '../components/graph/PersonPanel';
 import { ContextMenu, type MenuItem } from '../components/graph/ContextMenu';
 import { SearchBar } from '../components/graph/SearchBar';
+import { OverflowMenu } from '../components/graph/OverflowMenu';
 
 type Mode = 'vertical' | 'radial';
 type RelKind = 'parent' | 'child' | 'spouse';
@@ -253,8 +254,6 @@ export function TreeGraph() {
 
     if (loading) return <div className="p-10 text-sm text-[var(--color-ink-muted)]">Chargement…</div>;
 
-    const btn =
-        'rounded-[var(--radius-sm)] border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-ink)] transition-colors hover:bg-[var(--color-bg)]';
     const candidates = persons.filter((p) => p.id !== anchorId);
 
     function openMenu(e: React.MouseEvent, personId: string | null) {
@@ -312,19 +311,22 @@ export function TreeGraph() {
 
     return (
         <div className="relative flex h-screen w-screen flex-col overflow-hidden">
-            <header className="z-10 flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 sm:gap-4 sm:px-4 sm:py-2.5">
+            <header className="z-10 flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 sm:gap-3 sm:px-4">
                 <Link
                     to="/app"
-                    className="shrink-0 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-ink)]"
+                    aria-label="Mes arbres"
                 >
-                    ←
+                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M12 4L6 10L12 16" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                 </Link>
-                <Link
-                    to={`/app/trees/${treeId}`}
-                    className="hidden shrink-0 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] sm:inline"
-                >
-                    Vue liste
-                </Link>
+
+                {persons.length > 0 && (
+                    <div className="min-w-0 flex-1 sm:flex-none">
+                        <SearchBar persons={persons} onPick={focusPerson} />
+                    </div>
+                )}
 
                 {mode === 'radial' && (
                     <span className="hidden shrink-0 rounded-full bg-[var(--color-bg)] px-2.5 py-1 text-[11px] text-[var(--color-ink-muted)] sm:inline">
@@ -332,36 +334,31 @@ export function TreeGraph() {
                     </span>
                 )}
 
-                {persons.length > 0 && (
-                    <div className="ml-1 min-w-0 flex-1 sm:ml-2 sm:flex-none">
-                        <SearchBar persons={persons} onPick={focusPerson} />
-                    </div>
-                )}
+                <div className="ml-auto flex shrink-0 items-center gap-1">
+                    <button
+                        onClick={() => layout && fitToBounds(layout.bounds)}
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-ink)]"
+                        aria-label="Recentrer la vue"
+                    >
+                        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+                            <rect x="4" y="4" width="12" height="12" rx="2" />
+                            <path d="M10 7v6M7 10h6" strokeLinecap="round" />
+                        </svg>
+                    </button>
 
-                <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                    {mode === 'vertical' && (
-                        <button
-                            onClick={() => setShowSiblings((s) => !s)}
-                            className={`${btn} hidden sm:inline-block`}
-                            style={{ background: showSiblings ? 'var(--color-bg)' : 'transparent', opacity: showSiblings ? 1 : 0.55 }}
-                        >
-                            Fratries
-                        </button>
-                    )}
-                    {mode === 'radial' && (
-                        <button onClick={exitRadial} className={`${btn} hidden sm:inline-block`}>
-                            Quitter l'orbite
-                        </button>
-                    )}
-                    <button onClick={() => zoomBy(0.85)} className={`${btn} w-7 px-0`} aria-label="Dézoomer">
-                        −
-                    </button>
-                    <button onClick={() => zoomBy(1.18)} className={`${btn} w-7 px-0`} aria-label="Zoomer">
-                        +
-                    </button>
-                    <button onClick={() => layout && fitToBounds(layout.bounds)} className={`${btn} hidden sm:inline-block`}>
-                        Recentrer
-                    </button>
+                    <OverflowMenu
+                        items={[
+                            ...(mode === 'vertical'
+                                ? [
+                                    {
+                                        label: 'Afficher les fratries',
+                                        active: showSiblings,
+                                        onClick: () => setShowSiblings((s) => !s),
+                                    },
+                                ]
+                                : [{ label: "Quitter l'orbite", onClick: exitRadial }]),
+                        ]}
+                    />
                 </div>
             </header>
 
