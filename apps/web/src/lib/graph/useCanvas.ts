@@ -15,6 +15,12 @@ export function useCanvas() {
     const [isPanning, setIsPanning] = useState(false);
     const panStart = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
     const pinchStart = useRef<{ dist: number; scale: number } | null>(null);
+    const viewportRef = useRef(viewport);
+    const animRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        viewportRef.current = viewport;
+    }, [viewport]);
 
     const zoomAt = useCallback((clientX: number, clientY: number, factor: number) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -126,10 +132,30 @@ export function useCanvas() {
         (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     }, []);
 
+    const animateTo = useCallback((target: Viewport, duration = 480) => {
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+        const start = { ...viewportRef.current };
+        const t0 = performance.now();
+        const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+
+        function step(now: number) {
+            const t = Math.min(1, (now - t0) / duration);
+            const e = ease(t);
+            setViewport({
+                x: start.x + (target.x - start.x) * e,
+                y: start.y + (target.y - start.y) * e,
+                scale: start.scale + (target.scale - start.scale) * e,
+            });
+            if (t < 1) animRef.current = requestAnimationFrame(step);
+        }
+        animRef.current = requestAnimationFrame(step);
+    }, []);
+
     const fitToBounds = useCallback(
-        (bounds: { minX: number; maxX: number; minY: number; maxY: number }, padding = 80) => {
+        (bounds: { minX: number; maxX: number; minY: number; maxY: number }, opts?: { animate?: boolean; padding?: number }) => {
             const el = containerRef.current;
             if (!el) return;
+            const padding = opts?.padding ?? 80;
             const w = el.clientWidth;
             const h = el.clientHeight;
             const bw = bounds.maxX - bounds.minX;
@@ -140,13 +166,15 @@ export function useCanvas() {
                 MAX_SCALE,
                 Math.max(MIN_SCALE, Math.min((w - padding * 2) / bw, (h - padding * 2) / bh)),
             );
-            setViewport({
+            const target = {
                 scale,
                 x: w / 2 - ((bounds.minX + bounds.maxX) / 2) * scale,
                 y: h / 2 - ((bounds.minY + bounds.maxY) / 2) * scale,
-            });
+            };
+            if (opts?.animate === false) setViewport(target);
+            else animateTo(target);
         },
-        [],
+        [animateTo],
     );
 
     const zoomBy = useCallback(
@@ -159,14 +187,17 @@ export function useCanvas() {
         [zoomAt],
     );
 
-    const centerOn = useCallback((x: number, y: number, scale?: number) => {
-        const el = containerRef.current;
-        if (!el) return;
-        setViewport((v) => {
-            const s = scale ?? Math.max(v.scale, 0.85);
-            return { scale: s, x: el.clientWidth / 2 - x * s, y: el.clientHeight / 2 - y * s };
-        });
-    }, []);
+    const centerOn = useCallback(
+        (x: number, y: number, scale?: number, opts?: { animate?: boolean }) => {
+            const el = containerRef.current;
+            if (!el) return;
+            const s = scale ?? Math.max(viewportRef.current.scale, 0.9);
+            const target = { scale: s, x: el.clientWidth / 2 - x * s, y: el.clientHeight / 2 - y * s };
+            if (opts?.animate === false) setViewport(target);
+            else animateTo(target);
+        },
+        [animateTo],
+    );
 
     return {
         containerRef,

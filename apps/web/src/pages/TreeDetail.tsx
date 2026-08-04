@@ -68,10 +68,10 @@ export function TreeDetail() {
 
     return (
         <div className="min-h-screen px-4 py-10 max-w-3xl mx-auto">
-            <Link to="/" className="text-sm text-[var(--color-ink-muted)] underline mb-4 inline-block">
+            <Link to="/app" className="text-sm text-[var(--color-ink-muted)] underline mb-4 inline-block">
                 ← Mes arbres
             </Link>
-            <Link to={`/trees/${treeId}/graph`} className="text-sm text-[var(--color-ink-muted)] underline mb-4 ml-4 inline-block">
+            <Link to={`/app/trees/${treeId}/graph`} className="text-sm text-[var(--color-ink-muted)] underline mb-4 ml-4 inline-block">
                 Vue graphique →
             </Link>
             <h1 className="text-xl font-semibold mb-6">Personnes ({persons.length})</h1>

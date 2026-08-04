@@ -314,13 +314,13 @@ export function TreeGraph() {
         <div className="relative flex h-screen w-screen flex-col overflow-hidden">
             <header className="z-10 flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 sm:gap-4 sm:px-4 sm:py-2.5">
                 <Link
-                    to="/"
+                    to="/app"
                     className="shrink-0 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
                 >
                     ←
                 </Link>
                 <Link
-                    to={`/trees/${treeId}`}
+                    to={`/app/trees/${treeId}`}
                     className="hidden shrink-0 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] sm:inline"
                 >
                     Vue liste
@@ -389,6 +389,23 @@ export function TreeGraph() {
                         >
                             <g transform={`translate(${viewport.x}, ${viewport.y}) scale(${viewport.scale})`}>
                                 {layout && <GraphEdges edges={layout.edges} highlightId={activeHighlight} />}
+                                {mode === 'radial' && 'rings' in (layout ?? {}) && (
+                                    <g>
+                                        {(layout as ReturnType<typeof computeRadialLayout>).rings.map((r) => (
+                                            <circle
+                                                key={r}
+                                                cx={0}
+                                                cy={0}
+                                                r={r}
+                                                fill="none"
+                                                stroke="var(--color-border)"
+                                                strokeWidth={1}
+                                                strokeDasharray="2 6"
+                                                opacity={0.4}
+                                            />
+                                        ))}
+                                    </g>
+                                )}
                                 {layout?.nodes.map((node) => (
                                     <g
                                         key={node.id}
@@ -403,7 +420,10 @@ export function TreeGraph() {
                                                 isFocus={node.id === focusId}
                                                 selected={node.id === selectedId}
                                                 dimmed={!!neighbourIds && !neighbourIds.has(node.id)}
-                                                onSelect={setSelectedId}
+                                                onSelect={(id) => {
+                                                    setSelectedId(id);
+                                                    if (mode === 'radial') centerOn(node.x, node.y, 1.1);
+                                                }}
                                                 onFocusRadial={toggleRadial}
                                                 onContextMenu={openMenu}
                                             />

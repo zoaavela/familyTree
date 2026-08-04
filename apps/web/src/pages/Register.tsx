@@ -17,7 +17,7 @@ export function Register() {
         setError(null);
         try {
             await register(email, password, displayName);
-            navigate('/');
+            navigate('/app');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erreur inconnue');
         }

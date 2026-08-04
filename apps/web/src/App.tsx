@@ -1,10 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/AuthContext';
+import { Landing } from './pages/Landing';
 import { Register } from './pages/Register';
 import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard';
+import { MyTrees } from './pages/MyTrees';
+import { Profile } from './pages/Profile';
+import { Settings } from './pages/Settings';
 import { TreeDetail } from './pages/TreeDetail';
 import { TreeGraph } from './pages/TreeGraph';
+import { AppShell } from './components/AppShell';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, booting } = useAuth();
@@ -21,18 +25,25 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
+
       <Route
-        path="/"
+        path="/app"
         element={
           <PrivateRoute>
-            <Dashboard />
+            <AppShell />
           </PrivateRoute>
         }
-      />
+      >
+        <Route index element={<MyTrees />} />
+        <Route path="profil" element={<Profile />} />
+        <Route path="parametres" element={<Settings />} />
+      </Route>
+
       <Route
-        path="/trees/:treeId"
+        path="/app/trees/:treeId"
         element={
           <PrivateRoute>
             <TreeDetail />
@@ -40,7 +51,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/trees/:treeId/graph"
+        path="/app/trees/:treeId/graph"
         element={
           <PrivateRoute>
             <TreeGraph />
