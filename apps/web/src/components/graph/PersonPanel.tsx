@@ -14,6 +14,8 @@ interface Props {
     onSelect: (id: string) => void;
     onSave: (id: string, data: Record<string, string | undefined>) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    onUnlink: (relationshipId: string) => Promise<void>;
+    onLinkExisting: (id: string) => void;
     isRadialFocus: boolean;
     editSignal?: number;
 }
@@ -30,6 +32,8 @@ export function PersonPanel({
     onSelect,
     onSave,
     onDelete,
+    onUnlink,
+    onLinkExisting,
     isRadialFocus,
     editSignal,
 }: Props) {
@@ -72,11 +76,24 @@ export function PersonPanel({
         return p ? `${p.firstName} ${p.lastName ?? ''}`.trim() : '—';
     };
 
-    const groups = [
-        { label: 'Parents', ids: rel.parents },
-        { label: 'Frères & sœurs', ids: rel.siblings },
-        { label: 'Conjoint·e·s', ids: rel.spouses },
-        { label: 'Enfants', ids: rel.children },
+    // Retrouve le lien réel derrière chaque proche, pour pouvoir le détacher
+    function relationIdFor(otherId: string, kind: 'parent' | 'child' | 'spouse') {
+        return relationships.find((r) => {
+            if (kind === 'parent') return r.type === 'PARENT_OF' && r.personAId === otherId && r.personBId === person!.id;
+            if (kind === 'child') return r.type === 'PARENT_OF' && r.personAId === person!.id && r.personBId === otherId;
+            return (
+                r.type === 'SPOUSE_OF' &&
+                ((r.personAId === person!.id && r.personBId === otherId) ||
+                    (r.personBId === person!.id && r.personAId === otherId))
+            );
+        })?.id;
+    }
+
+    const groups: { label: string; ids: string[]; kind: 'parent' | 'child' | 'spouse' | 'sibling' }[] = [
+        { label: 'Parents', ids: rel.parents, kind: 'parent' },
+        { label: 'Frères & sœurs', ids: rel.siblings, kind: 'sibling' },
+        { label: 'Conjoint·e·s', ids: rel.spouses, kind: 'spouse' },
+        { label: 'Enfants', ids: rel.children, kind: 'child' },
     ].filter((g) => g.ids.length > 0);
 
     async function handleSave(e: FormEvent) {
@@ -237,6 +254,18 @@ export function PersonPanel({
                         </div>
                     </div>
 
+                    <div className="mb-3 flex items-center justify-between">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-ink-muted)]">
+                            Liens
+                        </p>
+                        <button
+                            onClick={() => onLinkExisting(person.id)}
+                            className="text-[11px] text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-ink)]"
+                        >
+                            + Relier quelqu'un
+                        </button>
+                    </div>
+
                     {groups.length === 0 ? (
                         <p className="text-xs text-[var(--color-ink-muted)]">Aucun proche enregistré.</p>
                     ) : (
@@ -247,15 +276,39 @@ export function PersonPanel({
                                         {group.label}
                                     </p>
                                     <div className="flex flex-col gap-0.5">
-                                        {group.ids.map((id) => (
-                                            <button
-                                                key={id}
-                                                onClick={() => onSelect(id)}
-                                                className="rounded-[var(--radius-sm)] px-2 py-1.5 text-left text-[13px] text-[var(--color-ink)] transition-colors hover:bg-[var(--color-bg)]"
-                                            >
-                                                {nameOf(id)}
-                                            </button>
-                                        ))}
+                                        {group.ids.map((id) => {
+                                            const relId = group.kind === 'sibling' ? undefined : relationIdFor(id, group.kind);
+                                            return (
+                                                <div key={id} className="group flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => onSelect(id)}
+                                                        className="flex-1 truncate rounded-[var(--radius-sm)] px-2 py-1.5 text-left text-[13px] text-[var(--color-ink)] transition-colors hover:bg-[var(--color-bg)]"
+                                                    >
+                                                        {nameOf(id)}
+                                                    </button>
+                                                    {relId ? (
+                                                        <button
+                                                            onClick={() => {
+                                                                if (confirm(`Détacher ${nameOf(id)} de ${person.firstName} ?`)) {
+                                                                    void onUnlink(relId);
+                                                                }
+                                                            }}
+                                                            className="shrink-0 rounded px-1.5 py-1 text-[11px] text-[var(--color-ink-muted)] opacity-0 transition-all hover:text-[var(--color-error)] group-hover:opacity-100"
+                                                            title="Détacher ce lien"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    ) : (
+                                                        <span
+                                                            className="shrink-0 px-1.5 text-[10px] text-[var(--color-ink-muted)] opacity-0 transition-opacity group-hover:opacity-100"
+                                                            title="Lien déduit des parents partagés"
+                                                        >
+                                                            auto
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}

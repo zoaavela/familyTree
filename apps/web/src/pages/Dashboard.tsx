@@ -13,7 +13,7 @@ export function Dashboard() {
                 <Link to="/trees">
                     <Button className="w-full mb-3">Mes arbres</Button>
                 </Link>
-                <Button variant="secondary" onClick={logout} className="w-full">
+                <Button variant="secondary" onClick={() => void logout()} className="w-full">
                     Se déconnecter
                 </Button>
             </Card>

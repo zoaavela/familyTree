@@ -106,6 +106,15 @@ export function useCanvas() {
         [zoomAt],
     );
 
+    const centerOn = useCallback((x: number, y: number, scale?: number) => {
+        const el = containerRef.current;
+        if (!el) return;
+        setViewport((v) => {
+            const s = scale ?? Math.max(v.scale, 0.85);
+            return { scale: s, x: el.clientWidth / 2 - x * s, y: el.clientHeight / 2 - y * s };
+        });
+    }, []);
+
     return {
         containerRef,
         viewport,
@@ -113,5 +122,6 @@ export function useCanvas() {
         handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerLeave: onPointerUp },
         fitToBounds,
         zoomBy,
+        centerOn,
     };
 }

@@ -28,35 +28,80 @@ export interface Relationship {
 }
 
 interface ApiError {
-    message: string | string[];
-    error: string;
-    statusCode: number;
+  message: string | string[];
+  error: string;
+  statusCode: number;
+}
+
+type TokenGetter = () => string | null;
+type TokenSetter = (token: string | null) => void;
+
+let getStoredToken: TokenGetter = () => null;
+let setStoredToken: TokenSetter = () => {};
+
+export function configureAuth(getter: TokenGetter, setter: TokenSetter) {
+  getStoredToken = getter;
+  setStoredToken = setter;
+}
+
+let refreshing: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (!refreshing) {
+    refreshing = fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data: { accessToken: string } = await res.json();
+        return data.accessToken;
+      })
+      .catch(() => null)
+      .finally(() => {
+        setTimeout(() => (refreshing = null), 0);
+      });
+  }
+  const token = await refreshing;
+  setStoredToken(token);
+  return token;
+}
+
+async function rawRequest(path: string, options: RequestInit, token?: string | null) {
+  return fetch(`${API_URL}${path}`, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
 }
 
 async function request<T>(path: string, options: RequestInit = {}, token?: string): Promise<T> {
-    const res = await fetch(`${API_URL}${path}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...options.headers,
-        },
-    });
+  const authToken = token ?? getStoredToken();
+  let res = await rawRequest(path, options, authToken);
 
-    if (!res.ok) {
-        const err: ApiError = await res.json().catch(() => ({
-            message: 'Erreur réseau',
-            error: 'Unknown',
-            statusCode: res.status,
-        }));
-        const message = Array.isArray(err.message) ? err.message.join(', ') : err.message;
-        throw new Error(message);
-    }
+  // Access token expiré : on le renouvelle une fois puis on rejoue la requête
+  if (res.status === 401 && !path.startsWith('/auth/refresh') && !path.startsWith('/auth/login')) {
+    const fresh = await refreshAccessToken();
+    if (fresh) res = await rawRequest(path, options, fresh);
+  }
 
-    return res.json();
+  if (!res.ok) {
+    const err: ApiError = await res.json().catch(() => ({
+      message: 'Erreur réseau',
+      error: 'Unknown',
+      statusCode: res.status,
+    }));
+    throw new Error(Array.isArray(err.message) ? err.message.join(', ') : err.message);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
 }
 
 export const api = {
+    refresh: () => request<{ accessToken: string }>('/auth/refresh', { method: 'POST' }),
+    logout: () => request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
     register: (email: string, password: string, displayName: string) =>
         request<{ accessToken: string }>('/auth/register', {
             method: 'POST',

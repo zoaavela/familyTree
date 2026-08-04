@@ -1,73 +1,106 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { api } from './api';
+import { api, configureAuth } from './api';
 
 interface User {
-    id: string;
-    email: string;
-    displayName: string;
+  id: string;
+  email: string;
+  displayName: string;
 }
 
 interface AuthContextValue {
-    user: User | null;
-    loading: boolean;
-    login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string, displayName: string) => Promise<void>;
-    logout: () => void;
+  user: User | null;
+  loading: boolean;
+  booting: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// Token en mémoire uniquement (pas de localStorage, protection XSS)
+// Access token en mémoire uniquement ; la persistance passe par le cookie httpOnly.
 let currentToken: string | null = null;
 export function getToken() {
-    return currentToken;
+  return currentToken;
 }
 
+configureAuth(
+  () => currentToken,
+  (token) => {
+    currentToken = token;
+  },
+);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [booting, setBooting] = useState(true);
 
-    async function loadUser(token: string) {
-        currentToken = token;
-        const me = await api.me(token);
-        setUser(me);
-    }
-
-    async function login(email: string, password: string) {
-        setLoading(true);
-        try {
-            const { accessToken } = await api.login(email, password);
-            await loadUser(accessToken);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function register(email: string, password: string, displayName: string) {
-        setLoading(true);
-        try {
-            const { accessToken } = await api.register(email, password, displayName);
-            await loadUser(accessToken);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    function logout() {
+  // Au chargement : tente de restaurer la session via le cookie de refresh
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { accessToken } = await api.refresh();
+        currentToken = accessToken;
+        const me = await api.me(accessToken);
+        if (!cancelled) setUser(me);
+      } catch {
         currentToken = null;
-        setUser(null);
-    }
+      } finally {
+        if (!cancelled) setBooting(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  async function loadUser(token: string) {
+    currentToken = token;
+    setUser(await api.me(token));
+  }
+
+  async function login(email: string, password: string) {
+    setLoading(true);
+    try {
+      const { accessToken } = await api.login(email, password);
+      await loadUser(accessToken);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function register(email: string, password: string, displayName: string) {
+    setLoading(true);
+    try {
+      const { accessToken } = await api.register(email, password, displayName);
+      await loadUser(accessToken);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function logout() {
+    try {
+      await api.logout();
+    } catch {
+      /* on déconnecte localement quoi qu'il arrive */
+    }
+    currentToken = null;
+    setUser(null);
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, booting, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    const ctx = useContext(AuthContext);
-    if (!ctx) throw new Error('useAuth doit être utilisé dans AuthProvider');
-    return ctx;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth doit être utilisé dans AuthProvider');
+  return ctx;
 }

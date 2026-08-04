@@ -13,6 +13,7 @@ import { PersonCard } from '../components/graph/PersonCard';
 import { PersonOrbitNode } from '../components/graph/PersonOrbitNode';
 import { PersonPanel } from '../components/graph/PersonPanel';
 import { ContextMenu, type MenuItem } from '../components/graph/ContextMenu';
+import { SearchBar } from '../components/graph/SearchBar';
 
 type Mode = 'vertical' | 'radial';
 type RelKind = 'parent' | 'child' | 'spouse';
@@ -38,6 +39,7 @@ export function TreeGraph() {
     const [anchorId, setAnchorId] = useState<string | null>(null);
     const [relKind, setRelKind] = useState<RelKind>('child');
     const [useExisting, setUseExisting] = useState(false);
+    const [linkMode, setLinkMode] = useState(false);
     const [existingId, setExistingId] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -48,7 +50,7 @@ export function TreeGraph() {
     const [menu, setMenu] = useState<{ x: number; y: number; personId: string | null } | null>(null);
     const [editSignal, setEditSignal] = useState(0);
 
-    const { containerRef, viewport, isPanning, handlers, fitToBounds, zoomBy } = useCanvas();
+    const { containerRef, viewport, isPanning, handlers, fitToBounds, zoomBy, centerOn } = useCanvas();
     const didFit = useRef(false);
 
     const load = useCallback(async () => {
@@ -124,10 +126,11 @@ export function TreeGraph() {
         return () => window.removeEventListener('keydown', onKey);
     }, [modalOpen, selectedId, mode, layout, fitToBounds, zoomBy, exitRadial, toggleRadial]);
 
-    function openAddModal(personId: string | null, kind: RelKind = 'child') {
+    function openAddModal(personId: string | null, kind: RelKind = 'child', existingOnly = false) {
         setAnchorId(personId);
         setRelKind(kind);
-        setUseExisting(false);
+        setUseExisting(existingOnly);
+        setLinkMode(existingOnly);
         setExistingId('');
         setFirstName('');
         setLastName('');
@@ -212,6 +215,19 @@ export function TreeGraph() {
         await load();
     }
 
+    async function handleUnlink(relationshipId: string) {
+        const token = getToken();
+        if (!token || !treeId) return;
+        await api.deleteRelationship(token, treeId, relationshipId);
+        await load();
+    }
+
+    function focusPerson(id: string) {
+        setSelectedId(id);
+        const node = layout?.nodes.find((n) => n.id === id);
+        if (node) centerOn(node.x, node.y);
+    }
+
     const selectedPerson = persons.find((p) => p.id === selectedId) ?? null;
     const activeHighlight = hoverId ?? selectedId;
 
@@ -249,6 +265,7 @@ export function TreeGraph() {
                 { label: 'Ajouter un parent', onClick: () => openAddModal(menu.personId, 'parent') },
                 { label: 'Ajouter un·e conjoint·e', onClick: () => openAddModal(menu.personId, 'spouse') },
                 { label: 'Ajouter un enfant', onClick: () => openAddModal(menu.personId, 'child') },
+                { label: 'Relier à une personne existante', onClick: () => openAddModal(menu.personId, 'child', true) },
                 { separator: true, label: '', onClick: () => { } },
                 {
                     label: mode === 'radial' && focusId === menu.personId ? 'Vue hiérarchique' : 'Vue orbitale',
@@ -292,6 +309,11 @@ export function TreeGraph() {
                     <span className="rounded-full bg-[var(--color-bg)] px-2.5 py-1 text-[11px] text-[var(--color-ink-muted)]">
                         Orbite · {persons.find((p) => p.id === focusId)?.firstName}
                     </span>
+                )}
+                {persons.length > 0 && (
+                    <div className="ml-2">
+                        <SearchBar persons={persons} onPick={focusPerson} />
+                    </div>
                 )}
                 <div className="ml-auto flex items-center gap-1.5">
                     {mode === 'vertical' && (
@@ -433,6 +455,8 @@ export function TreeGraph() {
                     onSelect={setSelectedId}
                     onSave={handleSavePerson}
                     onDelete={handleDeletePerson}
+                    onUnlink={handleUnlink}
+                    onLinkExisting={(id) => openAddModal(id, 'child', true)}
                     isRadialFocus={mode === 'radial' && focusId === selectedId}
                     editSignal={editSignal}
                 />
@@ -442,7 +466,11 @@ export function TreeGraph() {
 
             <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
                 <h2 className="mb-4 text-lg font-semibold">
-                    {anchorPerson ? `Proche de ${anchorPerson.firstName}` : 'Ajouter une personne'}
+                    {linkMode
+                        ? `Relier à ${anchorPerson?.firstName}`
+                        : anchorPerson
+                            ? `Proche de ${anchorPerson.firstName}`
+                            : 'Ajouter une personne'}
                 </h2>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {anchorId && (
@@ -468,7 +496,7 @@ export function TreeGraph() {
                         </div>
                     )}
 
-                    {candidates.length > 0 && (
+                    {candidates.length > 0 && !linkMode && (
                         <div className="flex gap-1.5 text-xs">
                             <button
                                 type="button"

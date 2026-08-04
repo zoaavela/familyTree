@@ -8,7 +8,14 @@ import { TreeDetail } from './pages/TreeDetail';
 import { TreeGraph } from './pages/TreeGraph';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, booting } = useAuth();
+  if (booting) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-[var(--color-ink-muted)]">
+        Chargement…
+      </div>
+    );
+  }
   return user ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
