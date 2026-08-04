@@ -215,6 +215,20 @@ export function TreeGraph() {
         await load();
     }
 
+    async function handleUploadPhoto(personId: string, file: File) {
+        const token = getToken();
+        if (!token || !treeId) return;
+        await api.uploadPhoto(token, treeId, personId, file);
+        await load();
+    }
+
+    async function handleRemovePhoto(personId: string) {
+        const token = getToken();
+        if (!token || !treeId) return;
+        await api.deletePhoto(token, treeId, personId);
+        await load();
+    }
+
     async function handleUnlink(relationshipId: string) {
         const token = getToken();
         if (!token || !treeId) return;
@@ -457,6 +471,8 @@ export function TreeGraph() {
                     onDelete={handleDeletePerson}
                     onUnlink={handleUnlink}
                     onLinkExisting={(id) => openAddModal(id, 'child', true)}
+                    onUploadPhoto={handleUploadPhoto}
+                    onRemovePhoto={handleRemovePhoto}
                     isRadialFocus={mode === 'radial' && focusId === selectedId}
                     editSignal={editSignal}
                 />

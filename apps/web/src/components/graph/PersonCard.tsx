@@ -42,12 +42,21 @@ export function PersonCard({ node, selected, dimmed, onSelect, onAddRelative, on
                     transition: 'opacity 200ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out',
                 }}
             >
-                <div
-                    className="flex shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
-                    style={{ width: 32, height: 32, background: 'var(--color-accent)', color: 'var(--color-bg)' }}
-                >
-                    {initials}
-                </div>
+                {person.photoUrl ? (
+                    <img
+                        src={person.photoUrl}
+                        alt=""
+                        className="h-8 w-8 shrink-0 rounded-full object-cover"
+                        style={{ width: 32, height: 32 }}
+                    />
+                ) : (
+                    <div
+                        className="flex shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                        style={{ width: 32, height: 32, background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+                    >
+                        {initials}
+                    </div>
+                )}
                 <div className="min-w-0 leading-tight">
                     <p className="truncate text-[13px] font-medium text-[var(--color-ink)]">
                         {person.firstName} {person.lastName}

@@ -18,6 +18,7 @@ export interface Person {
     birthPlace: string | null;
     deathPlace: string | null;
     biography: string | null;
+    photoUrl: string | null;
 }
 
 export interface Relationship {
@@ -151,5 +152,24 @@ export const api = {
 
     deletePerson: (token: string, treeId: string, personId: string) =>
         request<{ success: boolean }>(`/trees/${treeId}/persons/${personId}`, { method: 'DELETE' }, token),
+        
+    uploadPhoto: async (token: string, treeId: string, personId: string, file: File): Promise<Person> => {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch(`${API_URL}/trees/${treeId}/persons/${personId}/photo`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: "Échec de l'upload" }));
+            throw new Error(Array.isArray(err.message) ? err.message.join(', ') : err.message);
+        }
+        return res.json();
+    },
+
+    deletePhoto: (token: string, treeId: string, personId: string) =>
+        request<Person>(`/trees/${treeId}/persons/${personId}/photo`, { method: 'DELETE' }, token),
 };
 

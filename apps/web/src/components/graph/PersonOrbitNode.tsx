@@ -33,22 +33,41 @@ export function PersonOrbitNode({ node, isFocus, selected, dimmed, onSelect, onF
             {(isFocus || selected || hover) && (
                 <circle r={r + 8} fill="none" stroke="var(--color-accent)" strokeWidth={1} opacity={0.35} />
             )}
+            <defs>
+                {person.photoUrl && (
+                    <clipPath id={`clip-${person.id}`}>
+                        <circle r={r} cx={0} cy={0} />
+                    </clipPath>
+                )}
+            </defs>
             <circle
                 r={r}
                 fill={isFocus ? 'var(--color-accent)' : 'var(--color-bg-elevated)'}
                 stroke={isFocus ? 'var(--color-accent)' : 'var(--color-border)'}
                 strokeWidth={1.5}
             />
-            <text
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={isFocus ? 13 : 10}
-                fontWeight={600}
-                fill={isFocus ? 'var(--color-bg)' : 'var(--color-ink)'}
-                style={{ pointerEvents: 'none' }}
-            >
-                {initials}
-            </text>
+            {person.photoUrl ? (
+                <image
+                    href={person.photoUrl}
+                    x={-r}
+                    y={-r}
+                    width={r * 2}
+                    height={r * 2}
+                    clipPath={`url(#clip-${person.id})`}
+                    preserveAspectRatio="xMidYMid slice"
+                />
+            ) : (
+                <text
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={isFocus ? 13 : 10}
+                    fontWeight={600}
+                    fill={isFocus ? 'var(--color-bg)' : 'var(--color-ink)'}
+                    style={{ pointerEvents: 'none' }}
+                >
+                    {initials}
+                </text>
+            )}
             {(hover || isFocus) && (
                 <text
                     y={r + 15}

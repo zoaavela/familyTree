@@ -7,9 +7,17 @@ import { UsersModule } from './users/users.module';
 import { TreesModule } from './trees/trees.module';
 import { PersonsModule } from './persons/persons.module';
 import { RelationshipsModule } from './relationships/relationships.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, TreesModule, PersonsModule, RelationshipsModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    TreesModule,
+    PersonsModule,
+    RelationshipsModule,
+    MediaModule],
   controllers: [AppController],
   providers: [AppService],
 })

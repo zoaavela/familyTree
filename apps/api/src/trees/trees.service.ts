@@ -1,11 +1,15 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../media/storage.service';
 import { CreateTreeDto } from './dto/create-tree.dto';
 import { UpdateTreeDto } from './dto/update-tree.dto';
 
 @Injectable()
 export class TreesService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private storage: StorageService,
+    ) { }
 
     create(userId: string, dto: CreateTreeDto) {
         return this.prisma.tree.create({
@@ -40,7 +44,20 @@ export class TreesService {
 
     async remove(userId: string, treeId: string) {
         await this.findOne(userId, treeId);
+
+        const persons = await this.prisma.person.findMany({
+            where: { treeId, photoUrl: { not: null } },
+            select: { photoUrl: true },
+        });
+
         await this.prisma.tree.delete({ where: { id: treeId } });
+
+        await Promise.all(
+            persons
+                .filter((p): p is { photoUrl: string } => !!p.photoUrl)
+                .map((p) => this.storage.deleteImage(p.photoUrl).catch(() => {})),
+        );
+
         return { success: true };
     }
 }

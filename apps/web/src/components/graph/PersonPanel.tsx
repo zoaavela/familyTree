@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, Input, Label } from '@familytree/ui';
 import type { Person, Relationship } from '../../lib/api';
+import { PhotoUpload } from './PhotoUpload';
 import { getRelatives } from '../../lib/graph/siblings';
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
     onDelete: (id: string) => Promise<void>;
     onUnlink: (relationshipId: string) => Promise<void>;
     onLinkExisting: (id: string) => void;
+    onUploadPhoto: (id: string, file: File) => Promise<void>;
+    onRemovePhoto: (id: string) => Promise<void>;
     isRadialFocus: boolean;
     editSignal?: number;
 }
@@ -34,6 +37,8 @@ export function PersonPanel({
     onDelete,
     onUnlink,
     onLinkExisting,
+    onUploadPhoto,
+    onRemovePhoto,
     isRadialFocus,
     editSignal,
 }: Props) {
@@ -90,10 +95,10 @@ export function PersonPanel({
     }
 
     const groups: { label: string; ids: string[]; kind: 'parent' | 'child' | 'spouse' | 'sibling' }[] = [
-        { label: 'Parents', ids: rel.parents, kind: 'parent' },
-        { label: 'Frères & sœurs', ids: rel.siblings, kind: 'sibling' },
-        { label: 'Conjoint·e·s', ids: rel.spouses, kind: 'spouse' },
-        { label: 'Enfants', ids: rel.children, kind: 'child' },
+        { label: 'Parents', ids: rel.parents, kind: 'parent' as const },
+        { label: 'Frères & sœurs', ids: rel.siblings, kind: 'sibling' as const },
+        { label: 'Conjoint·e·s', ids: rel.spouses, kind: 'spouse' as const },
+        { label: 'Enfants', ids: rel.children, kind: 'child' as const },
     ].filter((g) => g.ids.length > 0);
 
     async function handleSave(e: FormEvent) {
@@ -127,6 +132,14 @@ export function PersonPanel({
             className="absolute right-0 top-0 z-20 flex h-full w-[320px] flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5"
             style={{ animation: 'slideInRight 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
+            <div className="mb-4 flex justify-center">
+                <PhotoUpload
+                    photoUrl={person.photoUrl}
+                    initials={`${person.firstName[0] ?? ''}${person.lastName?.[0] ?? ''}`.toUpperCase()}
+                    onUpload={(file) => onUploadPhoto(person.id, file)}
+                    onRemove={() => onRemovePhoto(person.id)}
+                />
+            </div>
             <div className="mb-5 flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <h2 className="truncate text-base font-semibold">

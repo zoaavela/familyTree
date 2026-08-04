@@ -1,11 +1,15 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../media/storage.service';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 
 @Injectable()
 export class PersonsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private storage: StorageService,
+    ) { }
 
     private async assertTreeAccess(userId: string, treeId: string) {
         const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
@@ -59,7 +63,10 @@ export class PersonsService {
     }
 
     async remove(userId: string, treeId: string, personId: string) {
-        await this.findOne(userId, treeId, personId);
+        const person = await this.findOne(userId, treeId, personId);
+        if (person.photoUrl) {
+            await this.storage.deleteImage(person.photoUrl).catch(() => {});
+        }
         await this.prisma.person.delete({ where: { id: personId } });
         return { success: true };
     }
