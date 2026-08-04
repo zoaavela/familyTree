@@ -1,12 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { api, configureAuth } from './api';
-
-interface User {
-  id: string;
-  email: string;
-  displayName: string;
-}
+import { api, configureAuth, type User } from './api';
 
 interface AuthContextValue {
   user: User | null;
@@ -15,6 +9,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: (updated: User) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -92,8 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  function refreshUser(updated: User) {
+    setUser(updated);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, booting, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, booting, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

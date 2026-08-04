@@ -24,4 +24,12 @@ export class UsersService {
     async findById(id: string) {
         return this.prisma.user.findUnique({ where: { id } });
     }
+
+    async updateProfile(userId: string, data: { displayName?: string; bio?: string }) {
+        return this.prisma.user.update({ where: { id: userId }, data });
+    }
+
+    async updateAvatar(userId: string, avatarUrl: string | null) {
+        return this.prisma.user.update({ where: { id: userId }, data: { avatarUrl } });
+    }
 }

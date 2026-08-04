@@ -1,5 +1,14 @@
 const API_URL = 'http://localhost:3000';
 
+export interface User {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+}
+
+
 export interface Tree {
     id: string;
     title: string;
@@ -113,9 +122,32 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         }),
-    me: (token: string) => request<{ id: string; email: string; displayName: string }>('/auth/me', {}, token),
+    me: (token: string) => request<User>('/auth/me', {}, token),
     createTree: (token: string, title: string, type: 'PERSONAL' | 'REFERENCE') =>
         request<Tree>('/trees', { method: 'POST', body: JSON.stringify({ title, type }) }, token),
+
+    updateProfile: (token: string, data: { displayName?: string; bio?: string }) =>
+        request<User>('/users/me', { method: 'PATCH', body: JSON.stringify(data) }, token),
+    
+    uploadAvatar: async (token: string, file: File): Promise<User> => {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch(`${API_URL}/users/me/avatar`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: "Échec de l'upload" }));
+            throw new Error(Array.isArray(err.message) ? err.message.join(', ') : err.message);
+        }
+        return res.json();
+    },
+
+    removeAvatar: (token: string) =>
+        request<User>('/users/me/avatar', { method: 'DELETE' }, token),
+
     listTrees: (token: string) => request<Tree[]>('/trees', {}, token),
     getTree: (token: string, treeId: string) => request<Tree>(`/trees/${treeId}`, {}, token),
 

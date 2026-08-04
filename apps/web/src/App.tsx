@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './lib/AuthContext';
 import { Register } from './pages/Register';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
-import { TreesList } from './pages/TreesList';
 import { TreeDetail } from './pages/TreeDetail';
 import { TreeGraph } from './pages/TreeGraph';
 
@@ -29,14 +28,6 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Dashboard />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/trees"
-        element={
-          <PrivateRoute>
-            <TreesList />
           </PrivateRoute>
         }
       />
