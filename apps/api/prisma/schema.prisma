@@ -56,12 +56,15 @@ enum MediaType {
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
+  googleId      String?   @unique @map("google_id")
+  emailVerified Boolean   @default(false) @map("email_verified")
   passwordHash  String?   @map("password_hash")
   displayName   String    @map("display_name")
   avatarUrl     String?   @map("avatar_url")
   bio           String?
   createdAt     DateTime  @default(now()) @map("created_at")
   refreshTokens RefreshToken[]
+  verificationTokens VerificationToken[]
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   trees         Tree[]
@@ -186,4 +189,16 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("verification_tokens")
 }

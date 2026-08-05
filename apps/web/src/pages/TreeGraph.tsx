@@ -15,6 +15,7 @@ import { PersonPanel } from '../components/graph/PersonPanel';
 import { ContextMenu, type MenuItem } from '../components/graph/ContextMenu';
 import { SearchBar } from '../components/graph/SearchBar';
 import { OverflowMenu } from '../components/graph/OverflowMenu';
+import { Icon } from '../components/Icon';
 
 type Mode = 'vertical' | 'radial';
 type RelKind = 'parent' | 'child' | 'spouse';
@@ -44,9 +45,12 @@ export function TreeGraph() {
     const [existingId, setExistingId] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [unionStart, setUnionStart] = useState('');
+    const [unionEnd, setUnionEnd] = useState('');
     const [linkPartner, setLinkPartner] = useState(true);
     const [formError, setFormError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [treeTitle, setTreeTitle] = useState<string | null>(null);
 
     const [menu, setMenu] = useState<{ x: number; y: number; personId: string | null } | null>(null);
     const [editSignal, setEditSignal] = useState(0);
@@ -63,6 +67,7 @@ export function TreeGraph() {
         ]);
         setPersons(p);
         setRelationships(r);
+        api.getTree(token, treeId).then((t) => setTreeTitle(t.title)).catch(() => {});
         setLoading(false);
     }, [treeId]);
 
@@ -135,6 +140,8 @@ export function TreeGraph() {
         setExistingId('');
         setFirstName('');
         setLastName('');
+        setUnionStart('');
+        setUnionEnd('');
         setLinkPartner(true);
         setFormError(null);
         setModalOpen(true);
@@ -173,6 +180,8 @@ export function TreeGraph() {
                         personAId: anchorId,
                         personBId: targetId,
                         type: 'SPOUSE_OF',
+                        startDate: unionStart || undefined,
+                        endDate: unionEnd || undefined,
                     });
                 } else {
                     await api.createRelationship(token, treeId, {
@@ -311,54 +320,61 @@ export function TreeGraph() {
 
     return (
         <div className="relative flex h-screen w-screen flex-col overflow-hidden">
-            <header className="z-10 flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 sm:gap-3 sm:px-4">
+            <header className="z-10 flex h-[58px] items-center gap-3 border-b border-[var(--color-border)] px-4">
                 <Link
                     to="/app"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-ink)]"
-                    aria-label="Mes arbres"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-muted)] transition-all hover:bg-[var(--color-bg-sunken)] hover:text-[var(--color-ink)]"
+                    aria-label="Retour"
                 >
-                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M12 4L6 10L12 16" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <Icon name="arrow-left" size={18} />
                 </Link>
 
-                {persons.length > 0 && (
-                    <div className="min-w-0 flex-1 sm:flex-none">
-                        <SearchBar persons={persons} onPick={focusPerson} />
-                    </div>
-                )}
+                <div className="hidden min-w-0 sm:block">
+                    <p className="truncate text-[14px] font-medium leading-tight">{treeTitle ?? 'Arbre'}</p>
+                    <p className="text-[11.5px] leading-tight text-[var(--color-ink-muted)] tabular-nums">
+                        {persons.length} personne{persons.length > 1 ? 's' : ''}
+                    </p>
+                </div>
 
-                {mode === 'radial' && (
-                    <span className="hidden shrink-0 rounded-full bg-[var(--color-bg)] px-2.5 py-1 text-[11px] text-[var(--color-ink-muted)] sm:inline">
-                        Orbite · {persons.find((p) => p.id === focusId)?.firstName}
-                    </span>
-                )}
+                <div className="mx-auto min-w-0 max-w-[280px] flex-1">
+                    {persons.length > 0 && <SearchBar persons={persons} onPick={focusPerson} />}
+                </div>
 
-                <div className="ml-auto flex shrink-0 items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1.5">
+                    {mode === 'vertical' ? (
+                        <button
+                            onClick={() => setShowSiblings((s) => !s)}
+                            className="hidden h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border px-3 text-[13px] transition-all sm:flex"
+                            style={{
+                                borderColor: showSiblings ? 'var(--color-border-strong)' : 'var(--color-border)',
+                                background: showSiblings ? 'var(--color-bg-sunken)' : 'transparent',
+                                color: showSiblings ? 'var(--color-ink)' : 'var(--color-ink-muted)',
+                            }}
+                        >
+                            Fratries
+                        </button>
+                    ) : (
+                        <button
+                            onClick={exitRadial}
+                            className="flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] px-3 text-[13px] text-[var(--color-ink-muted)] transition-all hover:bg-[var(--color-bg-sunken)] hover:text-[var(--color-ink)]"
+                        >
+                            <Icon name="orbit" size={16} />
+                            Quitter
+                        </button>
+                    )}
+
                     <button
                         onClick={() => layout && fitToBounds(layout.bounds)}
-                        className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-ink)]"
-                        aria-label="Recentrer la vue"
+                        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--color-border)] text-[var(--color-ink-muted)] transition-all hover:bg-[var(--color-bg-sunken)] hover:text-[var(--color-ink)]"
+                        aria-label="Recentrer"
                     >
-                        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-                            <rect x="4" y="4" width="12" height="12" rx="2" />
-                            <path d="M10 7v6M7 10h6" strokeLinecap="round" />
-                        </svg>
+                        <Icon name="target" size={17} />
                     </button>
 
-                    <OverflowMenu
-                        items={[
-                            ...(mode === 'vertical'
-                                ? [
-                                    {
-                                        label: 'Afficher les fratries',
-                                        active: showSiblings,
-                                        onClick: () => setShowSiblings((s) => !s),
-                                    },
-                                ]
-                                : [{ label: "Quitter l'orbite", onClick: exitRadial }]),
-                        ]}
-                    />
+                    <Button onClick={() => openAddModal(null)} className="h-9 px-3.5">
+                        <Icon name="plus" size={16} className="mr-1" />
+                        <span className="hidden sm:inline">Personne</span>
+                    </Button>
                 </div>
             </header>
 
@@ -444,7 +460,7 @@ export function TreeGraph() {
                             <div className="flex gap-3.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-[11px] text-[var(--color-ink-muted)]">
                                 {[
                                     { label: 'Filiation', color: 'var(--edge-parent)', dash: undefined },
-                                    { label: 'Union', color: 'var(--edge-spouse)', dash: undefined },
+                                    { label: 'Union', color: 'var(--edge-union)', dash: undefined },
                                     { label: 'Fratrie', color: 'var(--edge-sibling)', dash: '2 3' },
                                 ].map((item) => (
                                     <span key={item.label} className="flex items-center gap-1.5">
@@ -586,6 +602,28 @@ export function TreeGraph() {
                             <div className="flex-1">
                                 <Label htmlFor="m-last">Nom</Label>
                                 <Input id="m-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                            </div>
+                        </div>
+                    )}
+
+                    {relKind === 'spouse' && (
+                        <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] p-3">
+                            <p className="mb-2.5 flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-ink-muted)]">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="var(--edge-union)" strokeWidth="1.4">
+                                    <circle cx="7.5" cy="11" r="4" />
+                                    <circle cx="12.5" cy="11" r="4" />
+                                </svg>
+                                Union — facultatif
+                            </p>
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <Label htmlFor="u-start">Mariage</Label>
+                                    <Input id="u-start" type="date" value={unionStart} onChange={(e) => setUnionStart(e.target.value)} />
+                                </div>
+                                <div className="flex-1">
+                                    <Label htmlFor="u-end">Fin</Label>
+                                    <Input id="u-end" type="date" value={unionEnd} onChange={(e) => setUnionEnd(e.target.value)} />
+                                </div>
                             </div>
                         </div>
                     )}

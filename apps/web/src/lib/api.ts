@@ -8,13 +8,33 @@ export interface User {
   bio: string | null;
 }
 
+export interface PublicUser {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  createdAt: string;
+  isSelf: boolean;
+}
+
+export interface FollowCounts {
+  followers: number;
+  following: number;
+}
+
+export interface FollowUser {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
 
 export interface Tree {
-    id: string;
-    title: string;
-    type: 'PERSONAL' | 'REFERENCE';
-    visibility: string;
-    createdAt: string;
+  id: string;
+  title: string;
+  type: 'PERSONAL' | 'REFERENCE';
+  visibility: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Person {
@@ -35,6 +55,8 @@ export interface Relationship {
     personAId: string;
     personBId: string;
     type: 'PARENT_OF' | 'SPOUSE_OF';
+    startDate: string | null;
+    endDate: string | null;
 }
 
 interface ApiError {
@@ -112,22 +134,59 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
 export const api = {
     refresh: () => request<{ accessToken: string }>('/auth/refresh', { method: 'POST' }),
     logout: () => request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
-    register: (email: string, password: string, displayName: string) =>
+    register: (email: string, password: string, displayName: string, turnstileToken: string) =>
         request<{ accessToken: string }>('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ email, password, displayName }),
+            body: JSON.stringify({ email, password, displayName, turnstileToken }),
         }),
     login: (email: string, password: string) =>
         request<{ accessToken: string }>('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         }),
+    verifyEmail: (token: string) => request<{ success: boolean }>('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) }),
+    resendVerification: (token: string) => request<{ success: boolean }>('/auth/resend-verification', { method: 'POST' }, token),
     me: (token: string) => request<User>('/auth/me', {}, token),
     createTree: (token: string, title: string, type: 'PERSONAL' | 'REFERENCE') =>
         request<Tree>('/trees', { method: 'POST', body: JSON.stringify({ title, type }) }, token),
 
     updateProfile: (token: string, data: { displayName?: string; bio?: string }) =>
         request<User>('/users/me', { method: 'PATCH', body: JSON.stringify(data) }, token),
+        
+    changePassword: (token: string, currentPassword: string, newPassword: string) =>
+        request<{ success: boolean }>('/users/me/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) }, token),
+
+    changeEmail: (token: string, newEmail: string, password: string) =>
+        request<User>('/users/me/email', { method: 'PATCH', body: JSON.stringify({ newEmail, password }) }, token),
+
+    exportData: (token: string) =>
+        request<Record<string, unknown>>('/users/me/export', {}, token),
+
+    deleteAccount: (token: string, password: string) =>
+        request<{ success: boolean }>('/users/me', { method: 'DELETE', body: JSON.stringify({ password }) }, token),
+    getProfile: (token: string, userId: string) =>
+        request<PublicUser>(`/users/${userId}`, {}, token),
+
+    getProfileTrees: (token: string, userId: string) =>
+        request<Tree[]>(`/users/${userId}/trees`, {}, token),
+
+    follow: (token: string, userId: string) =>
+        request<{ id: string }>(`/users/${userId}/follow`, { method: 'POST' }, token),
+
+    unfollow: (token: string, userId: string) =>
+        request<{ success: boolean }>(`/users/${userId}/follow`, { method: 'DELETE' }, token),
+
+    followStatus: (token: string, userId: string) =>
+        request<{ following: boolean }>(`/users/${userId}/follow-status`, {}, token),
+
+    followCounts: (token: string, userId: string) =>
+        request<FollowCounts>(`/users/${userId}/follow-counts`, {}, token),
+
+    listFollowers: (token: string, userId: string) =>
+        request<FollowUser[]>(`/users/${userId}/followers`, {}, token),
+
+    listFollowing: (token: string, userId: string) =>
+        request<FollowUser[]>(`/users/${userId}/following`, {}, token),
     
     uploadAvatar: async (token: string, file: File): Promise<User> => {
         const form = new FormData();
@@ -159,8 +218,21 @@ export const api = {
     createRelationship: (
         token: string,
         treeId: string,
-        data: { personAId: string; personBId: string; type: 'PARENT_OF' | 'SPOUSE_OF' },
+        data: {
+            personAId: string;
+            personBId: string;
+            type: 'PARENT_OF' | 'SPOUSE_OF';
+            startDate?: string;
+            endDate?: string;
+        },
     ) => request<Relationship>(`/trees/${treeId}/relationships`, { method: 'POST', body: JSON.stringify(data) }, token),
+
+    updateRelationship: (
+        token: string,
+        treeId: string,
+        relId: string,
+        data: { startDate?: string; endDate?: string },
+    ) => request<Relationship>(`/trees/${treeId}/relationships/${relId}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
     listRelationships: (token: string, treeId: string) =>
         request<Relationship[]>(`/trees/${treeId}/relationships`, {}, token),
 

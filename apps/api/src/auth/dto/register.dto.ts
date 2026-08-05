@@ -11,4 +11,7 @@ export class RegisterDto {
     @IsString()
     @MinLength(2)
     displayName: string;
+
+    @IsString()
+    turnstileToken: string;
 }

@@ -245,11 +245,21 @@ export function computeFamilyLayout({
         for (let i = 0; i < u.members.length - 1; i++) {
             const a = pos.get(u.members[i])!;
             const b = pos.get(u.members[i + 1])!;
+            const rel = spouseLinks.find(
+                (r) =>
+                    (r.personAId === u.members[i] && r.personBId === u.members[i + 1]) ||
+                    (r.personBId === u.members[i] && r.personAId === u.members[i + 1]),
+            );
+            const year = rel?.startDate ? new Date(rel.startDate).getFullYear() : null;
             edges.push({
                 id: `sp-${u.id}-${i}`,
                 kind: 'SPOUSE_OF',
                 memberIds: [u.members[i], u.members[i + 1]],
                 path: `M ${a.x + NODE_WIDTH / 2} ${a.y} L ${b.x - NODE_WIDTH / 2} ${b.y}`,
+                midX: (a.x + b.x) / 2,
+                midY: a.y,
+                label: year ? String(year) : undefined,
+                ended: !!rel?.endDate,
             });
         }
 

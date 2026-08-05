@@ -17,14 +17,17 @@ export function Landing() {
       </header>
 
       <main className="mx-auto flex max-w-2xl flex-col items-center px-6 pb-24 pt-20 text-center sm:pt-28">
-        <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
+        <h1 className="rise-in text-3xl font-semibold leading-tight tracking-[-0.02em] sm:text-4xl">
           Construisez l'arbre de votre famille, ensemble.
         </h1>
-        <p className="mt-4 max-w-lg text-[15px] text-[var(--color-ink-muted)]">
+        <p
+          className="rise-in mt-4 max-w-lg text-[15px] text-[var(--color-ink-muted)]"
+          style={{ animationDelay: '80ms' }}
+        >
           Ajoutez vos proches, leurs histoires, leurs photos — et explorez vos liens de parenté
           dans une vue interactive pensée pour ça.
         </p>
-        <div className="mt-8 flex gap-3">
+        <div className="rise-in mt-8 flex gap-3" style={{ animationDelay: '160ms' }}>
           <Link to="/register">
             <Button className="h-11 px-6">Commencer gratuitement</Button>
           </Link>
@@ -40,8 +43,12 @@ export function Landing() {
             { title: 'Vue interactive', desc: "Naviguez dans votre arbre en un coup d'œil, générations comprises." },
             { title: 'Vue orbitale', desc: 'Centrez-vous sur une personne et explorez ses liens en un regard.' },
             { title: 'Collaboratif', desc: 'Construisez votre arbre à plusieurs, sans rien perdre en route.' },
-          ].map((f) => (
-            <div key={f.title} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
+          ].map((f, i) => (
+            <div
+              key={f.title}
+              className="rise-in rounded-[var(--radius-md)] border border-[var(--color-border)] p-4"
+              style={{ animationDelay: `${240 + i * 70}ms` }}
+            >
               <p className="text-sm font-medium">{f.title}</p>
               <p className="mt-1 text-[13px] text-[var(--color-ink-muted)]">{f.desc}</p>
             </div>

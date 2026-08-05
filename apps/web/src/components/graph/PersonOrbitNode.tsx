@@ -15,7 +15,6 @@ interface Props {
 export function PersonOrbitNode({ node, isFocus, selected, dimmed, onSelect, onFocusRadial, onContextMenu }: Props) {
     const [hover, setHover] = useState(false);
     const { person } = node;
-    const initials = `${person.firstName[0] ?? ''}${person.lastName?.[0] ?? ''}`.toUpperCase();
     const r = isFocus ? 34 : Math.max(14, 23 - node.generation * 3);
 
     const longPress = useLongPress((x, y) => {
@@ -39,40 +38,50 @@ export function PersonOrbitNode({ node, isFocus, selected, dimmed, onSelect, onF
             {(isFocus || selected || hover) && (
                 <circle r={r + 8} fill="none" stroke="var(--color-accent)" strokeWidth={1} opacity={0.35} />
             )}
-            <defs>
-                {person.photoUrl && (
-                    <clipPath id={`clip-${person.id}`}>
-                        <circle r={r} cx={0} cy={0} />
-                    </clipPath>
-                )}
-            </defs>
-            <circle
-                r={r}
-                fill={isFocus ? 'var(--color-accent)' : 'var(--color-bg-elevated)'}
-                stroke={isFocus ? 'var(--color-accent)' : 'var(--color-border)'}
-                strokeWidth={1.5}
-            />
             {person.photoUrl ? (
-                <image
-                    href={person.photoUrl}
-                    x={-r}
-                    y={-r}
-                    width={r * 2}
-                    height={r * 2}
-                    clipPath={`url(#clip-${person.id})`}
-                    preserveAspectRatio="xMidYMid slice"
-                />
+                <>
+                    <defs>
+                        <clipPath id={`clip-${person.id}`}>
+                            <circle r={r} cx={0} cy={0} />
+                        </clipPath>
+                    </defs>
+                    <circle
+                        r={r}
+                        fill={isFocus ? 'var(--color-accent)' : 'var(--color-bg-elevated)'}
+                        stroke={isFocus ? 'var(--color-accent)' : 'var(--color-border)'}
+                        strokeWidth={1.5}
+                    />
+                    <image
+                        href={person.photoUrl}
+                        x={-r}
+                        y={-r}
+                        width={r * 2}
+                        height={r * 2}
+                        clipPath={`url(#clip-${person.id})`}
+                        preserveAspectRatio="xMidYMid slice"
+                    />
+                </>
             ) : (
-                <text
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fontSize={isFocus ? 13 : 10}
-                    fontWeight={600}
-                    fill={isFocus ? 'var(--color-bg)' : 'var(--color-ink)'}
-                    style={{ pointerEvents: 'none' }}
-                >
-                    {initials}
-                </text>
+                <>
+                    <circle
+                        r={r}
+                        fill={isFocus ? 'var(--color-accent)' : 'var(--color-bg-sunken)'}
+                        stroke={isFocus ? 'var(--color-accent)' : 'var(--color-border)'}
+                        strokeWidth={1.5}
+                    />
+                    <g
+                        transform={`translate(${-r * 0.42}, ${-r * 0.42}) scale(${r / 24})`}
+                        stroke={isFocus ? 'var(--color-on-accent)' : 'var(--color-ink-faint)'}
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="none"
+                        style={{ pointerEvents: 'none' }}
+                    >
+                        <circle cx="10" cy="7.2" r="3.2" />
+                        <path d="M3.6 17c.7-3.4 3.4-5.4 6.4-5.4s5.7 2 6.4 5.4" />
+                    </g>
+                </>
             )}
             {(hover || isFocus) && (
                 <text

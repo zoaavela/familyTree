@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -35,6 +36,7 @@ export class AuthController {
       dto.email,
       dto.password,
       dto.displayName,
+      dto.turnstileToken,
     );
     this.setCookie(res, refreshToken, refreshExpiresAt);
     return { accessToken };
@@ -73,5 +75,34 @@ export class AuthController {
     if (!user) return null;
     const { passwordHash, ...safeUser } = user;
     return safeUser;
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Req() req: Request) {}
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    if (!req.user) throw new UnauthorizedException('No user from google');
+    const { accessToken, refreshToken, refreshExpiresAt } = await this.authService.googleLogin(req.user);
+    this.setCookie(res, refreshToken, refreshExpiresAt);
+    
+    // Redirect to frontend app
+    const redirectUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://familytree.com/app' 
+      : 'http://localhost:5173/app';
+    res.redirect(redirectUrl);
+  }
+
+  @Post('verify-email')
+  async verifyEmail(@Body('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('resend-verification')
+  async resendVerification(@Req() req: AuthenticatedRequest) {
+    return this.authService.resendVerification(req.user.userId);
   }
 }

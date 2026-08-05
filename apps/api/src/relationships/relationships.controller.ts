@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Patch, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { RelationshipsService } from './relationships.service';
 import { CreateRelationshipDto } from './dto/create-relationship.dto';
+import { UpdateRelationshipDto } from './dto/update-relationship.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 interface AuthenticatedRequest extends Request {
@@ -26,5 +27,15 @@ export class RelationshipsController {
     @Delete(':id')
     remove(@Req() req: AuthenticatedRequest, @Param('treeId') treeId: string, @Param('id') id: string) {
         return this.relationshipsService.remove(req.user.userId, treeId, id);
+    }
+
+    @Patch(':id')
+    update(
+        @Req() req: AuthenticatedRequest,
+        @Param('treeId') treeId: string,
+        @Param('id') id: string,
+        @Body() dto: UpdateRelationshipDto,
+    ) {
+        return this.relationshipsService.update(req.user.userId, treeId, id, dto);
     }
 }

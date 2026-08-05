@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRelationshipDto } from './dto/create-relationship.dto';
+import { UpdateRelationshipDto } from './dto/update-relationship.dto';
 
 @Injectable()
 export class RelationshipsService {
@@ -72,5 +73,19 @@ export class RelationshipsService {
         if (!rel || rel.treeId !== treeId) throw new NotFoundException('Relation introuvable');
         await this.prisma.relationship.delete({ where: { id: relationshipId } });
         return { success: true };
+    }
+
+    async update(userId: string, treeId: string, relationshipId: string, dto: UpdateRelationshipDto) {
+        await this.assertTreeAccess(userId, treeId);
+        const rel = await this.prisma.relationship.findUnique({ where: { id: relationshipId } });
+        if (!rel || rel.treeId !== treeId) throw new NotFoundException('Relation introuvable');
+
+        return this.prisma.relationship.update({
+            where: { id: relationshipId },
+            data: {
+                startDate: dto.startDate ? new Date(dto.startDate) : null,
+                endDate: dto.endDate ? new Date(dto.endDate) : null,
+            },
+        });
     }
 }

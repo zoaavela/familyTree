@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@familytree/ui": "workspace:*",
+    "@marsidev/react-turnstile": "^1.5.4",
     "dagre": "^0.8.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -3,10 +3,28 @@ import { compressImage } from '../../lib/compressImage';
 
 interface Props {
   photoUrl: string | null;
-  initials: string;
+  initials?: string;
   onUpload: (file: File) => Promise<void>;
   onRemove: () => Promise<void>;
   size?: number;
+}
+
+function DefaultAvatar({ size }: { size: number }) {
+  return (
+    <svg
+      width={size * 0.5}
+      height={size * 0.5}
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="10" cy="7.2" r="3.2" />
+      <path d="M3.6 17c.7-3.4 3.4-5.4 6.4-5.4s5.7 2 6.4 5.4" />
+    </svg>
+  );
 }
 
 export function PhotoUpload({ photoUrl, initials, onUpload, onRemove, size = 88 }: Props) {
@@ -45,10 +63,10 @@ export function PhotoUpload({ photoUrl, initials, onUpload, onRemove, size = 88 
           <img src={photoUrl} alt="" className="h-full w-full object-cover" />
         ) : (
           <div
-            className="flex h-full w-full items-center justify-center text-lg font-semibold"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+            className="flex h-full w-full items-center justify-center"
+            style={{ background: 'var(--color-bg-sunken)', color: 'var(--color-ink-faint)' }}
           >
-            {initials}
+            <DefaultAvatar size={size} />
           </div>
         )}
 

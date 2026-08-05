@@ -15,6 +15,10 @@ export interface GraphEdge {
     kind: EdgeKind;
     memberIds: string[];
     path: string;
+    midX?: number;
+    midY?: number;
+    label?: string;
+    ended?: boolean;
 }
 
 export interface GraphLayout {

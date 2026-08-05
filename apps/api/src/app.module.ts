@@ -8,6 +8,7 @@ import { TreesModule } from './trees/trees.module';
 import { PersonsModule } from './persons/persons.module';
 import { RelationshipsModule } from './relationships/relationships.module';
 import { MediaModule } from './media/media.module';
+import { FollowModule } from './follow/follow.module';
 
 @Module({
   imports: [
@@ -17,7 +18,9 @@ import { MediaModule } from './media/media.module';
     TreesModule,
     PersonsModule,
     RelationshipsModule,
-    MediaModule],
+    MediaModule,
+    FollowModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -7,7 +7,7 @@ interface AuthContextValue {
   loading: boolean;
   booting: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string, turnstileToken: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: (updated: User) => void;
 }
@@ -67,10 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function register(email: string, password: string, displayName: string) {
+  async function register(email: string, password: string, displayName: string, turnstileToken: string) {
     setLoading(true);
     try {
-      const { accessToken } = await api.register(email, password, displayName);
+      const { accessToken } = await api.register(email, password, displayName, turnstileToken);
       await loadUser(accessToken);
     } finally {
       setLoading(false);

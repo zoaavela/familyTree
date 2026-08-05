@@ -14,7 +14,6 @@ interface Props {
 
 export function PersonCard({ node, selected, dimmed, onSelect, onAddRelative, onFocusRadial, onContextMenu }: Props) {
     const { person } = node;
-    const initials = `${person.firstName[0] ?? ''}${person.lastName?.[0] ?? ''}`.toUpperCase();
     const birth = person.birthDate ? new Date(person.birthDate).getFullYear() : null;
     const death = person.deathDate ? new Date(person.deathDate).getFullYear() : null;
     const years = birth || death ? `${birth ?? '?'} – ${death ?? ''}`.trim() : null;
@@ -53,14 +52,16 @@ export function PersonCard({ node, selected, dimmed, onSelect, onAddRelative, on
                         src={person.photoUrl}
                         alt=""
                         className="h-8 w-8 shrink-0 rounded-full object-cover"
-                        style={{ width: 32, height: 32 }}
                     />
                 ) : (
                     <div
-                        className="flex shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
-                        style={{ width: 32, height: 32, background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                        style={{ background: 'var(--color-bg-sunken)', color: 'var(--color-ink-faint)' }}
                     >
-                        {initials}
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="10" cy="7.2" r="3.2" />
+                            <path d="M3.6 17c.7-3.4 3.4-5.4 6.4-5.4s5.7 2 6.4 5.4" />
+                        </svg>
                     </div>
                 )}
                 <div className="min-w-0 leading-tight">

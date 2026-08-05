@@ -6,6 +6,7 @@ import { MediaModule } from '../media/media.module';
 @Module({
   imports: [MediaModule],
   providers: [TreesService],
-  controllers: [TreesController]
+  controllers: [TreesController],
+  exports: [TreesService],
 })
 export class TreesModule {}

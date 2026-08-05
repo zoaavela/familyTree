@@ -85,11 +85,16 @@ export function computeRadialLayout(
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const curve = 0.14;
+    const isUnion = r.type === 'SPOUSE_OF';
     edges.push({
       id: r.id,
       kind: r.type as EdgeKind,
       memberIds: [r.personAId, r.personBId],
       path: `M ${a.x} ${a.y} Q ${mx - dy * curve} ${my + dx * curve} ${b.x} ${b.y}`,
+      midX: isUnion ? mx : undefined,
+      midY: isUnion ? my : undefined,
+      label: isUnion && r.startDate ? String(new Date(r.startDate).getFullYear()) : undefined,
+      ended: isUnion && !!r.endDate,
     });
   }
 
